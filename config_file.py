@@ -1,11 +1,11 @@
 from torchvision import transforms
-
+num_classes = 20
 image_shape = 256
 train_batch_size = 64
 test_val_batch_size = 32
-epochs=25
+epochs=15
 model_name='efficientnet-b1'
-learning_rate = 0.0001
+learning_rate = 0.00001
 print_freq = 10
 save_filename_f = model_name+'.pth'
 transform_train = transforms.Compose([
@@ -33,3 +33,7 @@ transform_test = transforms.Compose([
 ║     8 ║  320 ║  352 ║  384 ║  448 ║  512 ║  576 ║  640 ║
 ║     9 ║ 1280 ║ 1408 ║ 1536 ║ 1792 ║ 2048 ║ 2304 ║ 2560 
 '''
+features_ = {'efficientnet-b1':1280,
+            'efficientnet-b2':1408,
+            'efficientnet-b3':1536
+}

@@ -25,12 +25,13 @@ from efficientnet_pytorch import EfficientNet
 #         output = self.features(img_data)
 
 # model = Pollen(20, 1280)
-model = torch.load('full.pth')
+# model = EfficientNet.from_pretrained('efficient-b2')
+model = torch.load('efficientnet-b1.pth')
 model.eval()
 # # model = EfficientNet.from_pretrained('full.pth')
 # checkpoint = torch.load('checkpoint_b1.pth')
 # model.load_state_dict(checkpoint['state_dict'])
-dummy_input = torch.randn(10, 3, 256, 256)
+dummy_input = torch.randn(1, 3, 256, 256).to('cuda')
 
 model.set_swish(memory_efficient=False)
 torch.onnx.export(model, dummy_input, "test-b1.onnx", verbose=True)

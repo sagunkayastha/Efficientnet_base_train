@@ -15,7 +15,7 @@ class Pollen(nn.Module):
         super(Pollen, self).__init__()
         self.num_classes = num_classes
         self.num_features = num_features
-        self.features = EfficientNet()
+        self.features = EfficientNet.from_name('efficientnet-b2')
         self.features._fc = nn.Linear(self.num_features,self.num_classes)
         # self.features._fc = nn.Sequential(nn.Linear(self.num_features, 128),
         #                          nn.BatchNorm1d(128),
@@ -40,20 +40,30 @@ img = Image.open('/home/ubuntu/sagun/Efficientnet_base_train/data_split/test/QUE
 # img = Image.fromarray(img)
 # checkpoint = torch.load('checkpoint.pth')
 # model.load_state_dict(checkpoint['state_dict'])
-model = torch.load('efficientnet-b2.pth')
-
-
+# model = torch.load('efficientnet-b2.pth')
+model = torch.load('efficientnet-b1.pth')
+model.eval()
 tfms = transforms.Compose([transforms.Resize(image_shape), 
                            transforms.ToTensor(),
                            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),])
 img = tfms(img)
 img = img.unsqueeze(0)
-model.eval()
 
+a = time.time()
 with torch.no_grad():
     for i in range(200):
+        print(i)
         logits = model(img.to(device))
+print(time.time() - a)
+exit()
+print(logits)
+log_np = logits.cpu().detach().numpy()[0]
+max_=max(logits.cpu().detach().numpy()[0])
+
+print(list(log_np).index(max_))
+
 preds = torch.topk(logits, k=5).indices.squeeze(0).tolist()
-for idx in preds:
-    prob = torch.softmax(logits, dim=1)[0, idx].item()
-    print('{:<75} ({:.2f}%)'.format(idx, prob*100))
+print(preds)
+# for idx in preds:
+#     prob = torch.softmax(logits, dim=1)[0, idx].item()
+#     print('{:<75} ({:.2f}%)'.format(idx, prob*100))

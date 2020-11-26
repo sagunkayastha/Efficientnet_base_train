@@ -16,8 +16,8 @@ def balance():
 
         fold = os.listdir(os.path.join(full_data_path,folder))
         shuffle(fold)
-        if len(fold)>2000:
-            fold = fold[:2000]
+        if len(fold)>2500:
+            fold = fold[:2500]
 
         for img in fold:
             src = os.path.join(full_data_path,folder,img)

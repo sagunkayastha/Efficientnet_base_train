@@ -5,3 +5,5 @@ checkpoints/
 weights/
 __pycache__
 *.zip
+*.pth
+*.onnx

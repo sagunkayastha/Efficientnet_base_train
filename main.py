@@ -21,7 +21,7 @@ from efficientnet_pytorch import EfficientNet
 from utils import AverageMeter, ProgressMeter
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-resume = False
+resume = True
 
 num_features = 1408
 # def accuracy(output, target, topk=(1,)):
@@ -86,6 +86,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
 
         # compute output
         output = model(images)
+        # log_softmax = torch.nn.LogSoftmax(dim=1)
+        # output =  log_softmax(output )
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -121,6 +123,8 @@ def vaidate(val_loader, model, criterion, device):
 
             # compute output
             output = model(images)
+            # log_softmax = torch.nn.LogSoftmax(dim=1)
+            # output =  log_softmax(output )
             loss = criterion(output, target)
 
             # measure accuracy and record loss
@@ -155,7 +159,12 @@ def main():
     val_loader = DataLoader(val_ds, test_val_batch_size , shuffle=False, num_workers=4, pin_memory=True)
     pred_loader = DataLoader(pred_ds, test_val_batch_size , shuffle= False, num_workers=4, pin_memory=True)
 
-    model = Pollen(20,num_features).to(device)
+    # model = Pollen(20,num_features).to(device)
+    model = EfficientNet.from_pretrained(model_name)
+    model._fc = nn.Sequential(nn.Linear(features_[model_name], 20),nn.LogSoftmax(dim=1))
+                          
+    model = model.to(device)
+    
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     if resume:
         checkpoint = torch.load('checkpoint.pth')
@@ -178,7 +187,8 @@ def main():
     factor=0.2
     )
 
-    criterion = nn.CrossEntropyLoss().to(device)
+    # criterion = nn.CrossEntropyLoss().to(device)
+    criterion = torch.nn.NLLLoss().to(device)
     best_val_accuracy = 0
     for epoch in range(epochs):
         train_loss = train(train_loader, model, criterion, optimizer, epoch, device)

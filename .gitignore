@@ -1,4 +1,7 @@
 balanced_dataset/
 Data_full
 data_split
+checkpoints/
+weights/
+__pycache__
 *.zip

@@ -2,6 +2,7 @@ import os
 import time
 import torch
 import tarfile
+import shutil
 import torchvision
 import torch.nn as nn
 from PIL import Image
@@ -20,7 +21,9 @@ from efficientnet_pytorch import EfficientNet
 from utils import AverageMeter, ProgressMeter
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+resume = False
 
+num_features = 1408
 # def accuracy(output, target, topk=(1,)):
 #     """Computes the accuracy over the k top predictions for the specified values of k"""
 #     with torch.no_grad():
@@ -49,15 +52,12 @@ class Pollen(nn.Module):
         self.num_classes = num_classes
         self.num_features = num_features
         self.features = EfficientNet.from_pretrained(model_name)
-        self.features._fc = nn.Sequential(nn.Linear(self.num_features, 128),
-                                 nn.BatchNorm1d(128),
-                                 nn.ReLU(),
-                                 nn.Dropout(p=0.3),
-                                 nn.Linear(128, 56),
-                                 nn.BatchNorm1d(56),
-                                 nn.ReLU(),
-                                 nn.Dropout(p=0.3),
-                                 nn.Linear(56, self.num_classes))
+        self.features._fc = nn.Linear(self.num_features,self.num_classes)
+        # self.features._fc = nn.Sequential(nn.Linear(self.num_features, 56),
+        #                          nn.BatchNorm1d(56),
+        #                          nn.ReLU(),
+        #                          nn.Dropout(p=0.3),
+        #                          nn.Linear(56, self.num_classes))
 
 
     def forward(self, img_data):
@@ -75,6 +75,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
     progress = ProgressMeter(len(train_loader), batch_time,  losses, top1,
                               prefix="Epoch: [{}]".format(epoch))
     end = time.time()
+    model.train()
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -110,7 +111,7 @@ def vaidate(val_loader, model, criterion, device):
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     progress = ProgressMeter(len(val_loader), batch_time, losses, top1,
-                             prefix='Test: ')
+                             prefix='Val: ')
     model.eval()
     with torch.no_grad():
         end = time.time()
@@ -123,7 +124,7 @@ def vaidate(val_loader, model, criterion, device):
             loss = criterion(output, target)
 
             # measure accuracy and record loss
-            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            acc1 = accuracy(output, target)
             losses.update(loss.item(), images.size(0))
             top1.update(acc1, images.size(0))
 
@@ -131,15 +132,15 @@ def vaidate(val_loader, model, criterion, device):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
+            if i % print_freq == 0:
                 progress.print(i)
 
     return top1.avg
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+def save_checkpoint(state,  filename='checkpoint.pth'):
     torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
+    
+    shutil.copyfile(filename, 'model_best.pth')
 
 def main():
     # Dataset
@@ -154,22 +155,46 @@ def main():
     val_loader = DataLoader(val_ds, test_val_batch_size , shuffle=False, num_workers=4, pin_memory=True)
     pred_loader = DataLoader(pred_ds, test_val_batch_size , shuffle= False, num_workers=4, pin_memory=True)
 
-    model = Pollen(20,1280).to(device)
-    # print(model)
+    model = Pollen(20,num_features).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    if resume:
+        checkpoint = torch.load('checkpoint.pth')
+        start_epoch = checkpoint['epoch']
+        best_acc1 = checkpoint['best_acc1']
+        
+            # best_acc1 may be from a checkpoint from a different GPU
+        best_acc1 = best_acc1.to(device)
+        model.load_state_dict(checkpoint['state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        print('MODEL RESUMEEEEDD')
+            
+    # print(model)
+    
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer,
     mode='max',
-    patience=5,
+    patience=3,
     verbose=True,
     factor=0.2
     )
 
     criterion = nn.CrossEntropyLoss().to(device)
+    best_val_accuracy = 0
     for epoch in range(epochs):
         train_loss = train(train_loader, model, criterion, optimizer, epoch, device)
-        val_loss = vaidate(val_loader, model, criterion, device)
-
+        val_acc = vaidate(val_loader, model, criterion, device)
+        scheduler.step(val_acc)
+        
+        if val_acc > best_val_accuracy:
+            torch.save(model,save_filename_f)
+            best_val_accuracy = val_acc
+            save_checkpoint({
+                'epoch': epoch + 1,
+                'arch': model_name,
+                'state_dict': model.state_dict(),
+                'best_acc1': best_val_accuracy,
+                'optimizer' : optimizer.state_dict(),
+            })
         # print(train_loss,train_acc )
 
         # print( val_loss, val_acc)

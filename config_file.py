@@ -1,13 +1,13 @@
 from torchvision import transforms
 
 image_shape = 256
-train_batch_size = 4
-test_val_batch_size = 2
-epochs=10
+train_batch_size = 64
+test_val_batch_size = 32
+epochs=25
 model_name='efficientnet-b1'
 learning_rate = 0.0001
-print_freq = 5
-
+print_freq = 10
+save_filename_f = model_name+'.pth'
 transform_train = transforms.Compose([
     transforms.Resize((image_shape,image_shape)), 
     transforms.RandomHorizontalFlip(),
@@ -22,3 +22,14 @@ transform_test = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ])
 
+'''
+1 ║   32 ║   32 ║   40 ║   48 ║   48 ║   56 ║   64 ║
+║     2 ║   16 ║   16 ║   24 ║   24 ║   24 ║   32 ║   32 ║
+║     3 ║   24 ║   24 ║   32 ║   32 ║   40 ║   40 ║   48 ║
+║     4 ║   40 ║   48 ║   48 ║   56 ║   64 ║   72 ║   80 ║
+║     5 ║   80 ║   88 ║   96 ║  112 ║  128 ║  144 ║  160 ║
+║     6 ║  112 ║  120 ║  136 ║  160 ║  176 ║  200 ║  224 ║
+║     7 ║  192 ║  208 ║  232 ║  272 ║  304 ║  344 ║  384 ║
+║     8 ║  320 ║  352 ║  384 ║  448 ║  512 ║  576 ║  640 ║
+║     9 ║ 1280 ║ 1408 ║ 1536 ║ 1792 ║ 2048 ║ 2304 ║ 2560 
+'''

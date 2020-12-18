@@ -21,9 +21,8 @@ from efficientnet_pytorch import EfficientNet
 from utils import AverageMeter, ProgressMeter
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-resume = True
+resume = False
 
-num_features = 1408
 # def accuracy(output, target, topk=(1,)):
 #     """Computes the accuracy over the k top predictions for the specified values of k"""
 #     with torch.no_grad():

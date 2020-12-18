@@ -26,12 +26,12 @@ from efficientnet_pytorch import EfficientNet
 
 # model = Pollen(20, 1280)
 # model = EfficientNet.from_pretrained('efficient-b2')
-model = torch.load('efficientnet-b1.pth')
+model = torch.load('efficientnet-b1.pth').cpu()
 model.eval()
 # # model = EfficientNet.from_pretrained('full.pth')
 # checkpoint = torch.load('checkpoint_b1.pth')
 # model.load_state_dict(checkpoint['state_dict'])
-dummy_input = torch.randn(1, 3, 256, 256).to('cuda')
+dummy_input = torch.randn(1, 3, 256, 256).cpu()
 
 model.set_swish(memory_efficient=False)
 torch.onnx.export(model, dummy_input, "test-b1.onnx", verbose=True)

@@ -1,7 +1,7 @@
 from torchvision import transforms
 num_classes = 20
 image_shape = 256
-train_batch_size = 64
+train_batch_size = 4
 test_val_batch_size = 32
 epochs=15
 model_name='efficientnet-b1'
